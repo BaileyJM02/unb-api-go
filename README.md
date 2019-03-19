@@ -38,7 +38,7 @@
 
 ## Features
 
-A few of the things you can do with Hue:
+A few of the things you can do with unb-api-go:
 
 * Connect to the UnbelievaBoat API
 * See user balance
