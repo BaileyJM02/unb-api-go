@@ -21,6 +21,11 @@ type errorResponse struct {
     Message string `json:"message"`
 }
 
+type timeoutResponse struct {
+    Message string `json:"message"`
+    RetryAfter time.Duration `json:"retry_after"`
+}
+
 type check struct {
     Ping time.Duration
     Up bool
@@ -62,6 +67,15 @@ func (u *userData) Request(protocol, url string) ([]byte, error) {
 	respo, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode == 429 {
+	    err := timeoutResponse{}
+	    srsly := json.Unmarshal(respo, &err)
+	    if srsly != nil {
+	        // This is a srsly bad error -_-
+	        panic(err)
+	    }
+	    return respo, errors.New(fmt.Sprintf("%v Retry after: %s", err.Message, err.RetryAfter))
 	}
 	// Bit hacky, test if the response contains the error body
 	if strings.Contains(string(respo), "error") {
@@ -156,6 +170,10 @@ func (u *userData) Check() (check, error) {
     data, err := u.Request("GET", "")
     elapsed := time.Since(start)
     if err != nil {
+        // because we never know how long.
+        if strings.Contains(string(data), `{"message":"You are being rate limited.","retry_after"`) {
+            return check{time.Since(time.Now()), true}, err
+        }
         switch x := string(data); x {
             case `{"error":"404: Not found"}`:
                 return check{elapsed, true}, nil

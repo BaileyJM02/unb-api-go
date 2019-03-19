@@ -129,7 +129,15 @@ func TestCheckReturnsIsDownWhen500(t *testing.T) {
 	check, err := api.Check()
 	equals(t, errors.New("Cannot Connect to API url."), err)
 	equals(t, false, check.Up)
-	
+}
+
+func TestClientReturnsRatelimitedWhen427(t *testing.T) {
+	client := setClient(429, "", `{"message":"You are being rate limited.","retry_after":36191}`)
+
+	api := Custom("token", client)
+	check, err := api.Check()
+	equals(t, errors.New("You are being rate limited. Retry after: 36.191µs"), err)
+	equals(t, true, check.Up)
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyNonInfinite(t *testing.T) {
