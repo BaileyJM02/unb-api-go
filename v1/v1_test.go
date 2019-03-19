@@ -240,3 +240,23 @@ func TestUserBalanceHandlesDataOnUnsuccessfulFetchCorrectlyWithIncorrectUser(t *
 	equals(t, errors.New("404: Not found (Unknown user)"), err)
 }
 
+func TestLeaderboardHandlesDataOnSuccessfulFetchCorrectly(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users", `[{"rank":"1","user_id":"116293018742554625","cash":"Infinity","bank":0,"total":"Infinity"},{"rank":"2","user_id":"398197113495748626","cash":"-Infinity","bank":"Infinity","total":0},{"rank":"3","user_id":"000000000000000000","cash":"33","bank":"Infinity","total":"Infinity"}]`)
+
+	api := Custom("token", client)
+	data, err := api.Leaderboard("411898639737421824") // Guild
+	ok(t, err)
+	equals(t, []userBalance{userBalance{1, "116293018742554625", 0, true, false, 0, false, false, 0, true, false}, userBalance{2, "398197113495748626", 0, false, true, 0, true, false, 0, false, false}, userBalance{3, "000000000000000000", 33, false, false, 0, true, false, 0, true, false}}, data)
+	equals(t,userBalance{1,"116293018742554625",0,true,false,0,false,false,0,true,false} ,data[0])
+}
+
+func TestLeaderboardHandlesErrorOnUnsuccessfulFetchCorrectly(t *testing.T) {
+    client := setClient(200, "/guilds/000000000000000000/users", `{"error":"404: Not found","message":"Unknown guild"}`)
+
+	api := Custom("token", client)
+	data, err := api.Leaderboard("000000000000000000") // Guild
+	equals(t, []userBalance{}, data)
+	equals(t, errors.New("404: Not found (Unknown guild)"), err)
+}
+
+

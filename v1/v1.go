@@ -41,10 +41,10 @@ type userBalance struct {
 }
 
 type userBalanceRaw struct {
-    Rank int `json:"rank"`
-    UserId string `json:"user_id"`
-    Cash int `json:"cash"`
-    Bank int `json:"bank"`
+    Rank interface{} `json:"rank"`
+    UserId interface{} `json:"user_id"`
+    Cash interface{} `json:"cash"`
+    Bank interface{} `json:"bank"`
     Total interface{} `json:"total"`
 }
 
@@ -76,6 +76,69 @@ func (u *userData) Request(protocol, url string) ([]byte, error) {
 	return respo, err
 }
 
+func fixTypes(data []byte) (userBalance, error) {
+    balUser := userBalance{}
+    var objmap map[string]interface{}
+    err := json.Unmarshal(data, &objmap)
+    if err != nil {
+        return userBalance{}, err
+    }
+    _, totalIsString := objmap["total"].(string)
+    if totalIsString {
+        switch x := objmap["total"]; x {
+            case "Infinity":
+                objmap["total"] = 0
+                objmap["infinite_total"] = true
+            case "-Infinity":
+		        objmap["total"] = -0
+                objmap["n-infinite_total"] = true
+	        default:
+	            objmap["total"], _ = strconv.ParseInt(objmap["total"].(string), 0, 64)
+	    }
+        
+    }
+    _, cashIsString := objmap["cash"].(string)
+    if cashIsString {
+        switch x := objmap["cash"]; x {
+            case "Infinity":
+                objmap["cash"] = 0
+                objmap["infinite_cash"] = true
+            case "-Infinity":
+		        objmap["cash"] = -0
+                objmap["n-infinite_cash"] = true
+	        default:
+		        objmap["cash"], _ = strconv.ParseInt(objmap["cash"].(string), 0, 64)
+	    }
+    }
+    _, bankIsString := objmap["bank"].(string)
+    if bankIsString {
+        switch x := objmap["bank"]; x {
+            case "Infinity":
+                objmap["bank"] = 0
+                objmap["infinite_bank"] = true
+            case "-Infinity":
+		        objmap["bank"] = -0
+                objmap["n-infinite_bank"] = true
+	        default:
+		        objmap["bank"], _ = strconv.ParseInt(objmap["bank"].(string), 0, 64)
+	    }
+    }
+    _, rankIsString := objmap["rank"].(string)
+    if rankIsString {
+        objmap["rank"], _ = strconv.ParseInt(objmap["rank"].(string), 0, 64)
+    }
+    
+    b, err := json.Marshal(objmap)
+    if err != nil {
+        panic(err)
+    }
+    err = json.Unmarshal([]byte(b), &balUser)
+    if err != nil {
+        return userBalance{}, err
+    }
+    return balUser, err
+}
+
 func New(token string) userData {
     client := &http.Client{}
     u := userData{token, client}
@@ -103,81 +166,46 @@ func (u *userData) Check() (check, error) {
 	        default:
 		        return check{time.Since(time.Now()), false}, err
 	    }
-    }
-		
+    }	
 	return check{time.Since(time.Now()), false}, errors.New("Cannot Connect to API url.")
 }
 
 func (u *userData) UserBalance(guild, user string) (userBalance, error) {
-    balUser := userBalance{}
     data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users/%v", guild, user))
     if err != nil {
         return userBalance{}, err
     }
-    var objmap map[string]interface{}
-    err = json.Unmarshal(data, &objmap)
+    userBal, err := fixTypes(data)
     if err != nil {
         return userBalance{}, err
     }
-    _, totalIsString := objmap["total"].(string)
-    if totalIsString {
-        switch x := objmap["total"]; x {
-            case "Infinity":
-                fmt.Print(x)
-                objmap["total"] = 0
-                objmap["infinite_total"] = true
-            case "-Infinity":
-                fmt.Print(x)
-		        objmap["total"] = -0
-                objmap["n-infinite_total"] = true
-	        default:
-	            fmt.Print(x)
-		        objmap["total"] = 0
-                objmap["infinite_total"] = true
-	    }
-        
-    }
-    _, cashIsString := objmap["cash"].(string)
-    if cashIsString {
-        switch x := objmap["cash"]; x {
-            case "Infinity":
-                objmap["cash"] = 0
-                objmap["infinite_cash"] = true
-            case "-Infinity":
-		        objmap["cash"] = -0
-                objmap["n-infinite_cash"] = true
-	        default:
-		        objmap["cash"] = 0
-                objmap["infinite_cash"] = true
-	    }
-    }
-    _, bankIsString := objmap["bank"].(string)
-    if bankIsString {
-        switch x := objmap["bank"]; x {
-            case "Infinity":
-                objmap["bank"] = 0
-                objmap["infinite_bank"] = true
-            case "-Infinity":
-		        objmap["bank"] = -0
-                objmap["n-infinite_bank"] = true
-	        default:
-		        objmap["bank"] = 0
-                objmap["infinite_bank"] = true
-	    }
-    }
-    _, rankIsString := objmap["rank"].(string)
-    if rankIsString {
-        objmap["rank"], _ = strconv.ParseInt(objmap["rank"].(string), 0, 64)
+	return userBal, err
+}
+
+func (u *userData) Leaderboard(guild string) ([]userBalance, error) {
+    var leaderboardRaw []userBalanceRaw
+    var leaderboard []userBalance
+    
+    data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users", guild))
+    if err != nil {
+        return []userBalance{}, err
     }
     
-    b, err := json.Marshal(objmap)
-    if err != nil {
-        panic(err)
+    if err := json.Unmarshal(data, &leaderboardRaw)
+    err != nil {
+        return []userBalance{}, err
     }
-    err = json.Unmarshal([]byte(b), &balUser)
+    for _, v := range leaderboardRaw {
+        value := fmt.Sprintf(`{"rank":"%v","user_id":"%v","cash":"%v","bank":"%v","total":"%v"}`,v.Rank,v.UserId,v.Cash,v.Bank,v.Total)
+        user, err := fixTypes([]byte(value))
+        if err != nil {
+            return []userBalance{}, err
+        }
+        leaderboard = append(leaderboard, user)
+    }
+
     if err != nil {
-        return userBalance{}, err
-    }    
-		
-	return balUser, err
+        return []userBalance{}, err
+    }
+	return leaderboard, err
 }
