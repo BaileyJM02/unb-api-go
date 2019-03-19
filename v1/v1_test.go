@@ -118,7 +118,7 @@ func TestCheckReturnsIsUpButErrorCannotConnectOn401(t *testing.T) {
 	api := Custom("token", client)
 	check, err := api.Check()
 	equals(t, true, check.Up)
-	equals(t, errors.New("Unauthorized - Check your token"), err)
+	equals(t, errors.New("401 Unauthorized (Check your token)"), err)
 
 }
 
@@ -132,22 +132,111 @@ func TestCheckReturnsIsDownWhen500(t *testing.T) {
 	
 }
 
-func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyNonInfinte(t *testing.T) {
+func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyNonInfinite(t *testing.T) {
 	client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"rank":"14","user_id":"398197113495748626","cash":25,"bank":200,"total":526}`)
 
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{14,"398197113495748626",25,200,526,false,false}, data)
+	equals(t, userBalance{14,"398197113495748626",25,false,false,200,false,false,526,false,false}, data)
 }
 
-func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithInfinte(t *testing.T) {
-    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"rank":"14","user_id":"398197113495748626","cash":25,"bank":200,"total":"Infinte"}`)
+func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRank(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"user_id":"398197113495748626","cash":25,"bank":200,"total":225}`)
 
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{14,"398197113495748626",25,200,0,true,false}, data)
+	equals(t, userBalance{0,"398197113495748626",25,false,false,200,false,false,225,false,false}, data)
 }
 
+func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteCash(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"user_id":"398197113495748626","cash":"Infinity","bank":200,"total":"Infinity"}`)
+
+	api := Custom("token", client)
+	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
+	ok(t, err)
+	equals(t, userBalance{0,"398197113495748626",0,true,false,200,false,false,0,true,false}, data)
+}
+
+func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteBank(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"user_id":"398197113495748626","cash":25,"bank":"Infinity","total":"Infinity"}`)
+
+	api := Custom("token", client)
+	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
+	ok(t, err)
+	equals(t, userBalance{0,"398197113495748626",25,false,false,0,true,false,0,true,false}, data)
+}
+
+func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteBankAndCash(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"user_id":"398197113495748626","cash":"Infinity","bank":"Infinity","total":"Infinity"}`)
+
+	api := Custom("token", client)
+	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
+	ok(t, err)
+	equals(t, userBalance{0,"398197113495748626",0,true,false,0,true,false,0,true,false}, data)
+}
+
+func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveInfiniteCash(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"user_id":"398197113495748626","cash":"-Infinity","bank":200,"total":"-Infinity"}`)
+
+	api := Custom("token", client)
+	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
+	ok(t, err)
+	equals(t, userBalance{0,"398197113495748626",0,false,true,200,false,false,0,false,true}, data)
+}
+
+func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveInfiniteBank(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"user_id":"398197113495748626","cash":25,"bank":"-Infinity","total":"-Infinity"}`)
+
+	api := Custom("token", client)
+	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
+	ok(t, err)
+	equals(t, userBalance{0,"398197113495748626",25,false,false,0,false,true,0,false,true}, data)
+}
+
+func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveInfiniteBankAndCash(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"user_id":"398197113495748626","cash":"-Infinity","bank":"-Infinity","total":"-Infinity"}`)
+
+	api := Custom("token", client)
+	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
+	ok(t, err)
+	equals(t, userBalance{0,"398197113495748626",0,false,true,0,false,true,0,false,true}, data)
+}
+
+func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveInfiniteBankAndInfiniteCash(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"user_id":"398197113495748626","cash":"Infinity","bank":"-Infinity","total":0}`)
+
+	api := Custom("token", client)
+	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
+	ok(t, err)
+	equals(t, userBalance{0,"398197113495748626",0,true,false,0,false,true,0,false,false}, data)
+}
+
+func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteBankAndNegitiveInfiniteCash(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"user_id":"398197113495748626","cash":"-Infinity","bank":"Infinity","total":0}`)
+
+	api := Custom("token", client)
+	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
+	ok(t, err)
+	equals(t, userBalance{0,"398197113495748626",0,false,true,0,true,false,0,false,false}, data)
+}
+
+func TestUserBalanceHandlesDataOnUnsuccessfulFetchCorrectlyWithIncorrectGuild(t *testing.T) {
+    client := setClient(200, "/guilds/000000000000000000/users/398197113495748626", `{"error":"404: Not found","message":"Unknown guild"}`)
+
+	api := Custom("token", client)
+	data, err := api.UserBalance("000000000000000000", "398197113495748626") // Guild, User
+	equals(t, userBalance{}, data)
+	equals(t, errors.New("404: Not found (Unknown guild)"), err)
+}
+
+func TestUserBalanceHandlesDataOnUnsuccessfulFetchCorrectlyWithIncorrectUser(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/000000000000000000", `{"error":"404: Not found","message":"Unknown user"}`)
+
+	api := Custom("token", client)
+	data, err := api.UserBalance("411898639737421824", "000000000000000000") // Guild, User
+	equals(t, userBalance{}, data)
+	equals(t, errors.New("404: Not found (Unknown user)"), err)
+}
 

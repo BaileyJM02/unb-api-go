@@ -8,11 +8,17 @@ import(
 	"fmt"
 	"encoding/json"
 	"strconv"
+	"strings"
 )
 
 type userData struct {
     token string
     client *http.Client
+}
+
+type errorResponse struct {
+    Error string `json:"error"`
+    Message string `json:"message"`
 }
 
 type check struct {
@@ -24,10 +30,14 @@ type userBalance struct {
     Rank int `json:"rank"`
     UserId string `json:"user_id"`
     Cash int `json:"cash"`
+    CashInfinite bool `json:"infinite_cash"`
+    CashNinfinite bool `json:"n-infinite_cash"`
     Bank int `json:"bank"`
+    BankInfinite bool `json:"infinite_bank"`
+    BankNinfinite bool `json:"n-infinite_bank"`
     Total int `json:"total"`
-    Infinite bool `json:"infinite"`
-    Ninfinite bool `json:"Ninfinte"`
+    Infinite bool `json:"infinite_total"`
+    Ninfinite bool `json:"n-infinite_total"`
 }
 
 type userBalanceRaw struct {
@@ -53,6 +63,16 @@ func (u *userData) Request(protocol, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Bit hacky, test if the response contains the error body
+	if strings.Contains(string(respo), "error") {
+	    err := errorResponse{}
+	    srsly := json.Unmarshal(respo, &err)
+	    if srsly != nil {
+	        // This is a srsly bad error -_-
+	        panic(err)
+	    }
+	    return respo, errors.New(fmt.Sprintf("%v (%v)", err.Error, err.Message))
+	}
 	return respo, err
 }
 
@@ -71,16 +91,19 @@ func Custom(token string, client *http.Client) userData {
 func (u *userData) Check() (check, error) {
     start := time.Now()
     data, err := u.Request("GET", "")
-    if err != nil {
-        return check{time.Since(time.Now()), false}, err
-    }
     elapsed := time.Since(start)
-    if string(data) == `{"error":"404: Not found"}` {
-	    return check{elapsed, true}, nil
-	}
-	if string(data) == `{"error":"401: Unauthorized"}` {
-	    return check{elapsed, true}, errors.New("Unauthorized - Check your token")
-	}
+    if err != nil {
+        switch x := string(data); x {
+            case `{"error":"404: Not found"}`:
+                return check{elapsed, true}, nil
+                
+            case `{"error":"401: Unauthorized"}`:
+		        return check{elapsed, true}, errors.New("401 Unauthorized (Check your token)")
+		        
+	        default:
+		        return check{time.Since(time.Now()), false}, err
+	    }
+    }
 		
 	return check{time.Since(time.Now()), false}, errors.New("Cannot Connect to API url.")
 }
@@ -89,20 +112,61 @@ func (u *userData) UserBalance(guild, user string) (userBalance, error) {
     balUser := userBalance{}
     data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users/%v", guild, user))
     if err != nil {
-        return userBalance{0,"",0,0,0,false,false}, err
+        return userBalance{}, err
     }
     var objmap map[string]interface{}
     err = json.Unmarshal(data, &objmap)
     if err != nil {
-        return userBalance{0,"",0,0,0,false,false}, err
+        return userBalance{}, err
     }
-    _, isString := objmap["total"].(string)
-    if isString {
-        objmap["total"] = 0
-        objmap["Infinite"] = true
+    _, totalIsString := objmap["total"].(string)
+    if totalIsString {
+        switch x := objmap["total"]; x {
+            case "Infinity":
+                fmt.Print(x)
+                objmap["total"] = 0
+                objmap["infinite_total"] = true
+            case "-Infinity":
+                fmt.Print(x)
+		        objmap["total"] = -0
+                objmap["n-infinite_total"] = true
+	        default:
+	            fmt.Print(x)
+		        objmap["total"] = 0
+                objmap["infinite_total"] = true
+	    }
+        
     }
-     _, isString = objmap["rank"].(string)
-    if isString {
+    _, cashIsString := objmap["cash"].(string)
+    if cashIsString {
+        switch x := objmap["cash"]; x {
+            case "Infinity":
+                objmap["cash"] = 0
+                objmap["infinite_cash"] = true
+            case "-Infinity":
+		        objmap["cash"] = -0
+                objmap["n-infinite_cash"] = true
+	        default:
+		        objmap["cash"] = 0
+                objmap["infinite_cash"] = true
+	    }
+    }
+    _, bankIsString := objmap["bank"].(string)
+    if bankIsString {
+        switch x := objmap["bank"]; x {
+            case "Infinity":
+                objmap["bank"] = 0
+                objmap["infinite_bank"] = true
+            case "-Infinity":
+		        objmap["bank"] = -0
+                objmap["n-infinite_bank"] = true
+	        default:
+		        objmap["bank"] = 0
+                objmap["infinite_bank"] = true
+	    }
+    }
+    _, rankIsString := objmap["rank"].(string)
+    if rankIsString {
         objmap["rank"], _ = strconv.ParseInt(objmap["rank"].(string), 0, 64)
     }
     
@@ -112,7 +176,7 @@ func (u *userData) UserBalance(guild, user string) (userBalance, error) {
     }
     err = json.Unmarshal([]byte(b), &balUser)
     if err != nil {
-        return userBalance{0,"",0,0,0,false,false}, err
+        return userBalance{}, err
     }    
 		
 	return balUser, err
