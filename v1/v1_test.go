@@ -128,16 +128,36 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyNonInfinte(t *testing.T
 		return &http.Response{
 			StatusCode: 200,
 			// Send response to be tested
-			Body:       ioutil.NopCloser(bytes.NewBufferString(`{"rank":"14","user_id":"398197113495748626","cash":0,"bank":526,"total":526}`)),
+			Body:       ioutil.NopCloser(bytes.NewBufferString(`{"rank":"14","user_id":"398197113495748626","cash":25,"bank":200,"total":526}`)),
  			// Must be set to non-nil value or it panics
 			Header:     make(http.Header),
 		}
 	})
 
 	api := Custom("token", client)
-	data, err := api.UserBalance("411898639737421824", "398197113495748626") // User, Guild
+	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, data, data)
+	equals(t, userBalance{14,"398197113495748626",25,200,526,false,false}, data)
+}
+
+func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithInfinte(t *testing.T) {
+
+	client := NewTestClient(func(req *http.Request) *http.Response {
+		// Test request parameters
+		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1/guilds/411898639737421824/users/398197113495748626")
+		return &http.Response{
+			StatusCode: 200,
+			// Send response to be tested
+			Body:       ioutil.NopCloser(bytes.NewBufferString(`{"rank":"14","user_id":"398197113495748626","cash":25,"bank":200,"total":"Infinte"}`)),
+ 			// Must be set to non-nil value or it panics
+			Header:     make(http.Header),
+		}
+	})
+
+	api := Custom("token", client)
+	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
+	ok(t, err)
+	equals(t, userBalance{14,"398197113495748626",25,200,0,true,false}, data)
 }
 
 

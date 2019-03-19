@@ -18,4 +18,11 @@ func main() {
     } else {
         fmt.Printf("Ping: %s \nIs up: %v \n", data.Ping, data.Up)
     }
+    
+    user, err := api.UserBalance("411898639737421824", "398197113495748626")
+    if err != nil {
+        fmt.Print(err)
+    } else {
+        fmt.Printf("Ping: %v \nIs up: %v \n", user.Total, user.Infinite)
+    }
 }

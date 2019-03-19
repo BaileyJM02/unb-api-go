@@ -7,6 +7,7 @@ import(
 	"errors"
 	"fmt"
 	"encoding/json"
+	"strconv"
 )
 
 type userData struct {
@@ -20,7 +21,7 @@ type check struct {
 }
 
 type userBalance struct {
-    Rank string `json:"rank"`
+    Rank int `json:"rank"`
     UserId string `json:"user_id"`
     Cash int `json:"cash"`
     Bank int `json:"bank"`
@@ -30,7 +31,7 @@ type userBalance struct {
 }
 
 type userBalanceRaw struct {
-    Rank string `json:"rank"`
+    Rank int `json:"rank"`
     UserId string `json:"user_id"`
     Cash int `json:"cash"`
     Bank int `json:"bank"`
@@ -88,17 +89,21 @@ func (u *userData) UserBalance(guild, user string) (userBalance, error) {
     balUser := userBalance{}
     data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users/%v", guild, user))
     if err != nil {
-        return userBalance{"","",0,0,0,false,false}, err
+        return userBalance{0,"",0,0,0,false,false}, err
     }
     var objmap map[string]interface{}
     err = json.Unmarshal(data, &objmap)
     if err != nil {
-        return userBalance{"","",0,0,0,false,false}, err
+        return userBalance{0,"",0,0,0,false,false}, err
     }
-    _, ok := objmap["total"].(string)
-    if ok {
+    _, isString := objmap["total"].(string)
+    if isString {
         objmap["total"] = 0
         objmap["Infinite"] = true
+    }
+     _, isString = objmap["rank"].(string)
+    if isString {
+        objmap["rank"], _ = strconv.ParseInt(objmap["rank"].(string), 0, 64)
     }
     
     b, err := json.Marshal(objmap)
@@ -107,14 +112,8 @@ func (u *userData) UserBalance(guild, user string) (userBalance, error) {
     }
     err = json.Unmarshal([]byte(b), &balUser)
     if err != nil {
-        return userBalance{"","",0,0,0,false,false}, err
+        return userBalance{0,"",0,0,0,false,false}, err
     }    
-    if string(data) == `{"error":"404: Not found"}` {
-	    return userBalance{"","",0,0,0,false,false}, nil
-	}
-	if string(data) == `{"error":"401: Unauthorized"}` {
-	    return userBalance{"","",0,0,0,false,false}, err
-	}
 		
-	return userBalance{"","",0,0,0,false,false}, err
+	return balUser, err
 }
