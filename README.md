@@ -1,7 +1,7 @@
 <h1 align="center">UnbelievaBoat API Wraper</h1><br>
 <p align="center">
   <a href="https://open-source.hue.observer/pre-micro/">
-    <img alt="Unb" title="Unb" src="https://media.discordapp.net/attachments/551828791002005507/557655119001288735/DonatorBot.png" width="400">
+    <img alt="Unb" title="Unb" src="https://i.imgur.com/tUiCsY5.jpg" width="400">
   </a>
 </p>
 
