@@ -42,6 +42,37 @@ func equals(tb testing.TB, exp, act interface{}) {
 	}
 }
 
+// Easy set-up
+func setClient(code int, url, data string) *http.Client {
+    client := NewTestClient(func(req *http.Request) *http.Response {
+		// Test request parameters
+		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1"+url)
+		return &http.Response{
+			StatusCode: code,
+			// Send response to be tested
+			Body:       ioutil.NopCloser(bytes.NewBufferString(data)),
+ 			// Must be set to non-nil value or it panics
+			Header:     make(http.Header),
+		}
+	})
+}
+
+func TestClientReturnsCorrectVal(t *testing.T) {
+    setClient(200, "ping", `{"test":"data"}`)
+    client := NewTestClient(func(req *http.Request) *http.Response {
+		// Test request parameters
+		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1")
+		return &http.Response{
+			StatusCode: 500,
+			// Send response to be tested
+			Body:       ioutil.NopCloser(bytes.NewBufferString(``)),
+ 			// Must be set to non-nil value or it panics
+			Header:     make(http.Header),
+		}
+	})
+}
+
+
 // RoundTripFunc .
 type RoundTripFunc func(req *http.Request) *http.Response
 
