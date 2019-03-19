@@ -46,7 +46,7 @@ func equals(tb testing.TB, exp, act interface{}) {
 func setClient(code int, url, data string) *http.Client {
     client := NewTestClient(func(req *http.Request) *http.Response {
 		// Test request parameters
-		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1"+url)
+//		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1"+url)
 		return &http.Response{
 			StatusCode: code,
 			// Send response to be tested
@@ -55,21 +55,25 @@ func setClient(code int, url, data string) *http.Client {
 			Header:     make(http.Header),
 		}
 	})
+	return client
 }
 
+// Test that it works or nothing else will.
 func TestClientReturnsCorrectVal(t *testing.T) {
-    setClient(200, "ping", `{"test":"data"}`)
+    setClient(200, "/ping", `{"test":"data"}`)
     client := NewTestClient(func(req *http.Request) *http.Response {
 		// Test request parameters
-		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1")
+		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1/ping")
 		return &http.Response{
-			StatusCode: 500,
+			StatusCode: 200,
 			// Send response to be tested
-			Body:       ioutil.NopCloser(bytes.NewBufferString(``)),
+			Body:       ioutil.NopCloser(bytes.NewBufferString(`{"test":"data"}`)),
  			// Must be set to non-nil value or it panics
 			Header:     make(http.Header),
 		}
 	})
+	
+	equals(t, setClient(200, "/ping", `{"test":"data"}`).CheckRedirect,client.CheckRedirect)
 }
 
 
@@ -89,7 +93,6 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 }
 
 func TestCheckReturnsIsUpOn404(t *testing.T) {
-
 	client := NewTestClient(func(req *http.Request) *http.Response {
 		// Test request parameters
 		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1")
@@ -110,18 +113,7 @@ func TestCheckReturnsIsUpOn404(t *testing.T) {
 }
 
 func TestCheckReturnsIsUpButErrorCannotConnectOn401(t *testing.T) {
-
-	client := NewTestClient(func(req *http.Request) *http.Response {
-		// Test request parameters
-		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1")
-		return &http.Response{
-			StatusCode: 200,
-			// Send response to be tested
-			Body:       ioutil.NopCloser(bytes.NewBufferString(`{"error":"401: Unauthorized"}`)),
- 			// Must be set to non-nil value or it panics
-			Header:     make(http.Header),
-		}
-	})
+	client := setClient(200, "", `{"error":"401: Unauthorized"}`)
 
 	api := Custom("token", client)
 	check, err := api.Check()
@@ -131,18 +123,7 @@ func TestCheckReturnsIsUpButErrorCannotConnectOn401(t *testing.T) {
 }
 
 func TestCheckReturnsIsDownWhen500(t *testing.T) {
-
-	client := NewTestClient(func(req *http.Request) *http.Response {
-		// Test request parameters
-		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1")
-		return &http.Response{
-			StatusCode: 500,
-			// Send response to be tested
-			Body:       ioutil.NopCloser(bytes.NewBufferString(``)),
- 			// Must be set to non-nil value or it panics
-			Header:     make(http.Header),
-		}
-	})
+	client := setClient(500, "", ``)
 
 	api := Custom("token", client)
 	check, err := api.Check()
@@ -152,18 +133,7 @@ func TestCheckReturnsIsDownWhen500(t *testing.T) {
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyNonInfinte(t *testing.T) {
-
-	client := NewTestClient(func(req *http.Request) *http.Response {
-		// Test request parameters
-		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1/guilds/411898639737421824/users/398197113495748626")
-		return &http.Response{
-			StatusCode: 200,
-			// Send response to be tested
-			Body:       ioutil.NopCloser(bytes.NewBufferString(`{"rank":"14","user_id":"398197113495748626","cash":25,"bank":200,"total":526}`)),
- 			// Must be set to non-nil value or it panics
-			Header:     make(http.Header),
-		}
-	})
+	client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"rank":"14","user_id":"398197113495748626","cash":25,"bank":200,"total":526}`)
 
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
@@ -172,18 +142,7 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyNonInfinte(t *testing.T
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithInfinte(t *testing.T) {
-
-	client := NewTestClient(func(req *http.Request) *http.Response {
-		// Test request parameters
-		equals(t, req.URL.String(), "https://unbelievable.pizza/api/v1/guilds/411898639737421824/users/398197113495748626")
-		return &http.Response{
-			StatusCode: 200,
-			// Send response to be tested
-			Body:       ioutil.NopCloser(bytes.NewBufferString(`{"rank":"14","user_id":"398197113495748626","cash":25,"bank":200,"total":"Infinte"}`)),
- 			// Must be set to non-nil value or it panics
-			Header:     make(http.Header),
-		}
-	})
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"rank":"14","user_id":"398197113495748626","cash":25,"bank":200,"total":"Infinte"}`)
 
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
