@@ -146,7 +146,7 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyNonInfinite(t *testing.
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{14,"398197113495748626",25,false,false,200,false,false,526,false,false}, data)
+	equals(t, userObj{14,"398197113495748626",25,false,false,200,false,false,526,false,false}, data)
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRank(t *testing.T) {
@@ -155,7 +155,7 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRank(t *testing.T
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{0,"398197113495748626",25,false,false,200,false,false,225,false,false}, data)
+	equals(t, userObj{0,"398197113495748626",25,false,false,200,false,false,225,false,false}, data)
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteCash(t *testing.T) {
@@ -164,7 +164,7 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteC
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{0,"398197113495748626",0,true,false,200,false,false,0,true,false}, data)
+	equals(t, userObj{0,"398197113495748626",0,true,false,200,false,false,0,true,false}, data)
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteBank(t *testing.T) {
@@ -173,7 +173,7 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteB
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{0,"398197113495748626",25,false,false,0,true,false,0,true,false}, data)
+	equals(t, userObj{0,"398197113495748626",25,false,false,0,true,false,0,true,false}, data)
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteBankAndCash(t *testing.T) {
@@ -182,7 +182,7 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteB
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{0,"398197113495748626",0,true,false,0,true,false,0,true,false}, data)
+	equals(t, userObj{0,"398197113495748626",0,true,false,0,true,false,0,true,false}, data)
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveInfiniteCash(t *testing.T) {
@@ -191,7 +191,7 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveI
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{0,"398197113495748626",0,false,true,200,false,false,0,false,true}, data)
+	equals(t, userObj{0,"398197113495748626",0,false,true,200,false,false,0,false,true}, data)
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveInfiniteBank(t *testing.T) {
@@ -200,7 +200,7 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveI
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{0,"398197113495748626",25,false,false,0,false,true,0,false,true}, data)
+	equals(t, userObj{0,"398197113495748626",25,false,false,0,false,true,0,false,true}, data)
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveInfiniteBankAndCash(t *testing.T) {
@@ -209,7 +209,7 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveI
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{0,"398197113495748626",0,false,true,0,false,true,0,false,true}, data)
+	equals(t, userObj{0,"398197113495748626",0,false,true,0,false,true,0,false,true}, data)
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveInfiniteBankAndInfiniteCash(t *testing.T) {
@@ -218,7 +218,7 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithNegitiveI
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{0,"398197113495748626",0,true,false,0,false,true,0,false,false}, data)
+	equals(t, userObj{0,"398197113495748626",0,true,false,0,false,true,0,false,false}, data)
 }
 
 func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteBankAndNegitiveInfiniteCash(t *testing.T) {
@@ -227,7 +227,7 @@ func TestUserBalanceHandlesDataOnSuccessfulFetchCorrectlyWithNoRankWithInfiniteB
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "398197113495748626") // Guild, User
 	ok(t, err)
-	equals(t, userBalance{0,"398197113495748626",0,false,true,0,true,false,0,false,false}, data)
+	equals(t, userObj{0,"398197113495748626",0,false,true,0,true,false,0,false,false}, data)
 }
 
 func TestUserBalanceHandlesDataOnUnsuccessfulFetchCorrectlyWithIncorrectGuild(t *testing.T) {
@@ -235,7 +235,7 @@ func TestUserBalanceHandlesDataOnUnsuccessfulFetchCorrectlyWithIncorrectGuild(t 
 
 	api := Custom("token", client)
 	data, err := api.UserBalance("000000000000000000", "398197113495748626") // Guild, User
-	equals(t, userBalance{}, data)
+	equals(t, userObj{}, data)
 	equals(t, errors.New("404: Not found (Unknown guild)"), err)
 }
 
@@ -244,7 +244,7 @@ func TestUserBalanceHandlesDataOnUnsuccessfulFetchCorrectlyWithIncorrectUser(t *
 
 	api := Custom("token", client)
 	data, err := api.UserBalance("411898639737421824", "000000000000000000") // Guild, User
-	equals(t, userBalance{}, data)
+	equals(t, userObj{}, data)
 	equals(t, errors.New("404: Not found (Unknown user)"), err)
 }
 
@@ -254,8 +254,8 @@ func TestLeaderboardHandlesDataOnSuccessfulFetchCorrectly(t *testing.T) {
 	api := Custom("token", client)
 	data, err := api.Leaderboard("411898639737421824") // Guild
 	ok(t, err)
-	equals(t, []userBalance{userBalance{1, "116293018742554625", 0, true, false, 0, false, false, 0, true, false}, userBalance{2, "398197113495748626", 0, false, true, 0, true, false, 0, false, false}, userBalance{3, "000000000000000000", 33, false, false, 0, true, false, 0, true, false}}, data)
-	equals(t,userBalance{1,"116293018742554625",0,true,false,0,false,false,0,true,false} ,data[0])
+	equals(t, []userObj{userObj{1, "116293018742554625", 0, true, false, 0, false, false, 0, true, false}, userObj{2, "398197113495748626", 0, false, true, 0, true, false, 0, false, false}, userObj{3, "000000000000000000", 33, false, false, 0, true, false, 0, true, false}}, data)
+	equals(t,userObj{1,"116293018742554625",0,true,false,0,false,false,0,true,false} ,data[0])
 }
 
 func TestLeaderboardHandlesErrorOnUnsuccessfulFetchCorrectly(t *testing.T) {
@@ -263,7 +263,7 @@ func TestLeaderboardHandlesErrorOnUnsuccessfulFetchCorrectly(t *testing.T) {
 
 	api := Custom("token", client)
 	data, err := api.Leaderboard("000000000000000000") // Guild
-	equals(t, []userBalance{}, data)
+	equals(t, []userObj{}, data)
 	equals(t, errors.New("404: Not found (Unknown guild)"), err)
 }
 

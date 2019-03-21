@@ -31,7 +31,7 @@ type check struct {
     Up bool
 }
 
-type userBalance struct {
+type userObj struct {
     Rank int `json:"rank"`
     UserId string `json:"user_id"`
     Cash int `json:"cash"`
@@ -90,12 +90,12 @@ func (u *userData) Request(protocol, url string) ([]byte, error) {
 	return respo, err
 }
 
-func fixTypes(data []byte) (userBalance, error) {
-    balUser := userBalance{}
+func fixTypes(data []byte) (userObj, error) {
+    balUser := userObj{}
     var objmap map[string]interface{}
     err := json.Unmarshal(data, &objmap)
     if err != nil {
-        return userBalance{}, err
+        return userObj{}, err
     }
     _, totalIsString := objmap["total"].(string)
     if totalIsString {
@@ -148,7 +148,7 @@ func fixTypes(data []byte) (userBalance, error) {
     }
     err = json.Unmarshal([]byte(b), &balUser)
     if err != nil {
-        return userBalance{}, err
+        return userObj{}, err
     }
     return balUser, err
 }
@@ -188,42 +188,42 @@ func (u *userData) Check() (check, error) {
 	return check{time.Since(time.Now()), false}, errors.New("Cannot Connect to API url.")
 }
 
-func (u *userData) UserBalance(guild, user string) (userBalance, error) {
+func (u *userData) UserBalance(guild, user string) (userObj, error) {
     data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users/%v", guild, user))
     if err != nil {
-        return userBalance{}, err
+        return userObj{}, err
     }
     userBal, err := fixTypes(data)
     if err != nil {
-        return userBalance{}, err
+        return userObj{}, err
     }
 	return userBal, err
 }
 
-func (u *userData) Leaderboard(guild string) ([]userBalance, error) {
+func (u *userData) Leaderboard(guild string) ([]userObj, error) {
     var leaderboardRaw []userBalanceRaw
-    var leaderboard []userBalance
+    var leaderboard []userObj
     
     data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users", guild))
     if err != nil {
-        return []userBalance{}, err
+        return []userObj{}, err
     }
     
     if err := json.Unmarshal(data, &leaderboardRaw)
     err != nil {
-        return []userBalance{}, err
+        return []userObj{}, err
     }
     for _, v := range leaderboardRaw {
         value := fmt.Sprintf(`{"rank":"%v","user_id":"%v","cash":"%v","bank":"%v","total":"%v"}`,v.Rank,v.UserId,v.Cash,v.Bank,v.Total)
         user, err := fixTypes([]byte(value))
         if err != nil {
-            return []userBalance{}, err
+            return []userObj{}, err
         }
         leaderboard = append(leaderboard, user)
     }
 
     if err != nil {
-        return []userBalance{}, err
+        return []userObj{}, err
     }
 	return leaderboard, err
 }
