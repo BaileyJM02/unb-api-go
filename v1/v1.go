@@ -45,7 +45,7 @@ type userObj struct {
     Ninfinite bool `json:"n-infinite_total"`
 }
 
-type userBalanceRaw struct {
+type userObjRaw struct {
     Rank interface{} `json:"rank"`
     UserId interface{} `json:"user_id"`
     Cash interface{} `json:"cash"`
@@ -201,7 +201,7 @@ func (u *userData) UserBalance(guild, user string) (userObj, error) {
 }
 
 func (u *userData) Leaderboard(guild string) ([]userObj, error) {
-    var leaderboardRaw []userBalanceRaw
+    var leaderboardRaw []userObjRaw
     var leaderboard []userObj
     
     data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users", guild))
