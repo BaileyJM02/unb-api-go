@@ -64,6 +64,12 @@ type userObjRaw struct {
     Total interface{} `json:"total"`
 }
 
+type userObPut struct {
+    Cash interface{} `json:"cash"`
+    Bank interface{} `json:"bank"`
+    Reason interface{} `json:"reason"`
+}
+
 func (u *userData) Request(protocol, url, payload string) ([]byte, error) {
 	req, err := http.NewRequest(protocol, "https://unbelievable.pizza/api/v1"+url, nil)
 	if err != nil {
@@ -211,16 +217,36 @@ func (u *userData) GetBalance(guild, user string) (userObj, error) {
 	return userBal, err
 }
 
-func (u *userData) SetBalance(guild, user string, payload userObjwReason) (userObj, error) {
+func (u *userData) SetBalance(guild, user string, payload userObjRawwReason) (userObj, error) {
     var payloadTypes := make(map[string]interface{})
-    switch x := payload.CashInfinite; x {
-        case true:
-            payloadTypes["Cash"] = "Infinity"
-        default:
-            payloadTypes["Cash"] = 
+    switch x := payload.Cash; x {
+        case string:
+            if payload.Cash == "Infinity" {
+                payloadTypes["Cash"] = "Infinity"
+            } else if payload.Cash == "-Infinity" {
+                payloadTypes["Cash"] = "-Infinity"
+            }
+        case int:
+            payloadTypes["Cash"] = payload.Cash
     }
-    value := fmt.Sprintf(`{"rank":"%v","user_id":"%v","cash":"%v","bank":"%v","total":"%v"}`,v.Rank,v.UserId,v.Cash,v.Bank,v.Total)
-    data, err := u.Request("PUT", fmt.Sprintf("/guilds/%v/users/%v", guild, user), fi)
+    switch x := payload.Bank; x {
+        case string:
+            if payload.Bank == "Infinity" {
+                payloadTypes["Bank"] = "Infinity"
+            } else if payload.Bank == "-Infinity" {
+                payloadTypes["Bank"] = "-Infinity"
+            }
+        case int:
+            payloadTypes["Bank"] = payload.Bank
+    }
+    switch x := payload.Reason; x {
+        case string:
+            payloadTypes["Reason"] = payload.Reason
+        case nil:
+            payloadTypes["Reason"] = "No reason provided."
+    }
+    value := fmt.Sprintf(`{"cash":"%v","bank":"%v","reason":"%v"}`,payloadTypes["Cash"],payloadTypes["Bank"],payloadTypes["Reason"])
+    data, err := u.Request("PUT", fmt.Sprintf("/guilds/%v/users/%v", guild, user), value)
     if err != nil {
         return userObj{}, err
     }
