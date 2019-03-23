@@ -9,6 +9,7 @@ import(
 	"encoding/json"
 	"strconv"
 	"strings"
+	"bytes"
 )
 
 type userData struct {
@@ -31,7 +32,7 @@ type check struct {
     Up bool
 }
 
-type userBalance struct {
+type userObj struct {
     Rank int `json:"rank"`
     UserId string `json:"user_id"`
     Cash int `json:"cash"`
@@ -45,7 +46,18 @@ type userBalance struct {
     Ninfinite bool `json:"n-infinite_total"`
 }
 
-type userBalanceRaw struct {
+type userObjwReason struct {
+    UserId string `json:"user_id"`
+    Cash int `json:"cash"`
+    CashInfinite bool `json:"infinite_cash"`
+    CashNinfinite bool `json:"n-infinite_cash"`
+    Bank int `json:"bank"`
+    BankInfinite bool `json:"infinite_bank"`
+    BankNinfinite bool `json:"n-infinite_bank"`
+    Reason string `json:"reason"`
+}
+
+type userObjRaw struct {
     Rank interface{} `json:"rank"`
     UserId interface{} `json:"user_id"`
     Cash interface{} `json:"cash"`
@@ -53,8 +65,15 @@ type userBalanceRaw struct {
     Total interface{} `json:"total"`
 }
 
-func (u *userData) Request(protocol, url string) ([]byte, error) {
-	req, err := http.NewRequest(protocol, "https://unbelievable.pizza/api/v1"+url, nil)
+type userObjPut struct {
+    Cash interface{} `json:"cash,omitempty"`
+    Bank interface{} `json:"bank,omitempty"`
+    Reason interface{} `json:"reason,omitempty"`
+}
+
+func (u *userData) Request(protocol, url string, payload []byte) ([]byte, error) {
+    b := bytes.NewBuffer(payload)
+	req, err := http.NewRequest(protocol, "https://unbelievable.pizza/api/v1"+url, b)
 	if err != nil {
 		return nil, err
 	}
@@ -90,12 +109,12 @@ func (u *userData) Request(protocol, url string) ([]byte, error) {
 	return respo, err
 }
 
-func fixTypes(data []byte) (userBalance, error) {
-    balUser := userBalance{}
+func fixTypesToStruct(data []byte) (userObj, error) {
+    balUser := userObj{}
     var objmap map[string]interface{}
     err := json.Unmarshal(data, &objmap)
     if err != nil {
-        return userBalance{}, err
+        return userObj{}, err
     }
     _, totalIsString := objmap["total"].(string)
     if totalIsString {
@@ -146,10 +165,12 @@ func fixTypes(data []byte) (userBalance, error) {
     if err != nil {
         panic(err)
     }
+    
     err = json.Unmarshal([]byte(b), &balUser)
     if err != nil {
-        return userBalance{}, err
+        return userObj{}, err
     }
+    
     return balUser, err
 }
 
@@ -167,7 +188,7 @@ func Custom(token string, client *http.Client) userData {
 
 func (u *userData) Check() (check, error) {
     start := time.Now()
-    data, err := u.Request("GET", "")
+    data, err := u.Request("GET", "", nil)
     elapsed := time.Since(start)
     if err != nil {
         // because we never know how long.
@@ -188,42 +209,110 @@ func (u *userData) Check() (check, error) {
 	return check{time.Since(time.Now()), false}, errors.New("Cannot Connect to API url.")
 }
 
-func (u *userData) UserBalance(guild, user string) (userBalance, error) {
-    data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users/%v", guild, user))
+func (u *userData) GetBalance(guild, user string) (userObj, error) {
+    data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users/%v", guild, user), nil)
     if err != nil {
-        return userBalance{}, err
+        return userObj{}, err
     }
-    userBal, err := fixTypes(data)
+    userBal, err := fixTypesToStruct(data)
     if err != nil {
-        return userBalance{}, err
+        return userObj{}, err
     }
 	return userBal, err
 }
 
-func (u *userData) Leaderboard(guild string) ([]userBalance, error) {
-    var leaderboardRaw []userBalanceRaw
-    var leaderboard []userBalance
-    
-    data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users", guild))
+func (u *userData) SetBalance(guild, user string, cash, bank, reason interface{}) (userObj, error) {
+    var payloadTypes = make(map[string]interface{})
+    switch x := cash; x.(type) {
+        case string:
+            if cash == "Infinity" {
+                payloadTypes["Cash"] = "Infinity"
+            } else if cash == "-Infinity" {
+                payloadTypes["Cash"] = "-Infinity"
+            }
+        case int:
+            payloadTypes["Cash"] = cash
+    }
+    switch x := bank; x.(type) {
+        case string:
+            if bank == "Infinity" {
+                payloadTypes["Bank"] = "Infinity"
+            } else if bank == "-Infinity" {
+                payloadTypes["Bank"] = "-Infinity"
+            }
+        case int:
+            payloadTypes["Bank"] = bank
+    }
+    switch x := reason; x.(type) {
+        case string:
+            payloadTypes["Reason"] = reason
+        case nil:
+            payloadTypes["Reason"] = "No reason provided."
+    }
+    value, err := json.Marshal(payloadTypes)
     if err != nil {
-        return []userBalance{}, err
+        return userObj{}, err
+    }
+    data, err := u.Request("PUT", fmt.Sprintf("/guilds/%v/users/%v", guild, user), value)
+    if err != nil {
+        return userObj{}, err
+    }
+    userBal, err := fixTypesToStruct(data)
+    if err != nil {
+        return userObj{}, err
+    }
+	return userBal, err
+}
+
+func (u *userData) UpdateBalance(guild, user string, cash, bank int, reason interface{}) (userObj, error) {
+    var payloadTypes = make(map[string]interface{})
+    payloadTypes["Cash"] = cash
+    payloadTypes["Bank"] = bank
+    switch x := reason; x.(type) {
+        case string:
+            payloadTypes["Reason"] = reason
+        case nil:
+            payloadTypes["Reason"] = "No reason provided."
+    }
+    value, err := json.Marshal(payloadTypes)
+    if err != nil {
+        return userObj{}, err
+    }
+    data, err := u.Request("PATCH", fmt.Sprintf("/guilds/%v/users/%v", guild, user), value)
+    if err != nil {
+        return userObj{}, err
+    }
+    userBal, err := fixTypesToStruct(data)
+    if err != nil {
+        return userObj{}, err
+    }
+	return userBal, err
+}
+
+func (u *userData) Leaderboard(guild string) ([]userObj, error) {
+    var leaderboardRaw []userObjRaw
+    var leaderboard []userObj
+    
+    data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users", guild), nil)
+    if err != nil {
+        return []userObj{}, err
     }
     
     if err := json.Unmarshal(data, &leaderboardRaw)
     err != nil {
-        return []userBalance{}, err
+        return []userObj{}, err
     }
     for _, v := range leaderboardRaw {
         value := fmt.Sprintf(`{"rank":"%v","user_id":"%v","cash":"%v","bank":"%v","total":"%v"}`,v.Rank,v.UserId,v.Cash,v.Bank,v.Total)
-        user, err := fixTypes([]byte(value))
+        user, err := fixTypesToStruct([]byte(value))
         if err != nil {
-            return []userBalance{}, err
+            return []userObj{}, err
         }
         leaderboard = append(leaderboard, user)
     }
 
     if err != nil {
-        return []userBalance{}, err
+        return []userObj{}, err
     }
 	return leaderboard, err
 }
