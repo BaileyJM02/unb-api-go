@@ -9,6 +9,7 @@ import(
 	"encoding/json"
 	"strconv"
 	"strings"
+	"bytes"
 )
 
 type userData struct {
@@ -64,14 +65,15 @@ type userObjRaw struct {
     Total interface{} `json:"total"`
 }
 
-type userObPut struct {
-    Cash interface{} `json:"cash"`
-    Bank interface{} `json:"bank"`
-    Reason interface{} `json:"reason"`
+type userObjPut struct {
+    Cash interface{} `json:"cash,omitempty"`
+    Bank interface{} `json:"bank,omitempty"`
+    Reason interface{} `json:"reason,omitempty"`
 }
 
-func (u *userData) Request(protocol, url, payload string) ([]byte, error) {
-	req, err := http.NewRequest(protocol, "https://unbelievable.pizza/api/v1"+url, nil)
+func (u *userData) Request(protocol, url string, payload []byte) ([]byte, error) {
+    b := bytes.NewBuffer(payload)
+	req, err := http.NewRequest(protocol, "https://unbelievable.pizza/api/v1"+url, b)
 	if err != nil {
 		return nil, err
 	}
@@ -163,10 +165,12 @@ func fixTypesToStruct(data []byte) (userObj, error) {
     if err != nil {
         panic(err)
     }
+    
     err = json.Unmarshal([]byte(b), &balUser)
     if err != nil {
         return userObj{}, err
     }
+    
     return balUser, err
 }
 
@@ -184,7 +188,7 @@ func Custom(token string, client *http.Client) userData {
 
 func (u *userData) Check() (check, error) {
     start := time.Now()
-    data, err := u.Request("GET", "", "")
+    data, err := u.Request("GET", "", nil)
     elapsed := time.Since(start)
     if err != nil {
         // because we never know how long.
@@ -206,7 +210,7 @@ func (u *userData) Check() (check, error) {
 }
 
 func (u *userData) GetBalance(guild, user string) (userObj, error) {
-    data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users/%v", guild, user), "")
+    data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users/%v", guild, user), nil)
     if err != nil {
         return userObj{}, err
     }
@@ -217,36 +221,64 @@ func (u *userData) GetBalance(guild, user string) (userObj, error) {
 	return userBal, err
 }
 
-func (u *userData) SetBalance(guild, user string, payload userObjRawwReason) (userObj, error) {
-    var payloadTypes := make(map[string]interface{})
-    switch x := payload.Cash; x {
+func (u *userData) SetBalance(guild, user string, cash, bank, reason interface{}) (userObj, error) {
+    var payloadTypes = make(map[string]interface{})
+    switch x := cash; x.(type) {
         case string:
-            if payload.Cash == "Infinity" {
+            if cash == "Infinity" {
                 payloadTypes["Cash"] = "Infinity"
-            } else if payload.Cash == "-Infinity" {
+            } else if cash == "-Infinity" {
                 payloadTypes["Cash"] = "-Infinity"
             }
         case int:
-            payloadTypes["Cash"] = payload.Cash
+            payloadTypes["Cash"] = cash
     }
-    switch x := payload.Bank; x {
+    switch x := bank; x.(type) {
         case string:
-            if payload.Bank == "Infinity" {
+            if bank == "Infinity" {
                 payloadTypes["Bank"] = "Infinity"
-            } else if payload.Bank == "-Infinity" {
+            } else if bank == "-Infinity" {
                 payloadTypes["Bank"] = "-Infinity"
             }
         case int:
-            payloadTypes["Bank"] = payload.Bank
+            payloadTypes["Bank"] = bank
     }
-    switch x := payload.Reason; x {
+    switch x := reason; x.(type) {
         case string:
-            payloadTypes["Reason"] = payload.Reason
+            payloadTypes["Reason"] = reason
         case nil:
             payloadTypes["Reason"] = "No reason provided."
     }
-    value := fmt.Sprintf(`{"cash":"%v","bank":"%v","reason":"%v"}`,payloadTypes["Cash"],payloadTypes["Bank"],payloadTypes["Reason"])
+    value, err := json.Marshal(payloadTypes)
+    if err != nil {
+        return userObj{}, err
+    }
     data, err := u.Request("PUT", fmt.Sprintf("/guilds/%v/users/%v", guild, user), value)
+    if err != nil {
+        return userObj{}, err
+    }
+    userBal, err := fixTypesToStruct(data)
+    if err != nil {
+        return userObj{}, err
+    }
+	return userBal, err
+}
+
+func (u *userData) UpdateBalance(guild, user string, cash, bank int, reason interface{}) (userObj, error) {
+    var payloadTypes = make(map[string]interface{})
+    payloadTypes["Cash"] = cash
+    payloadTypes["Bank"] = bank
+    switch x := reason; x.(type) {
+        case string:
+            payloadTypes["Reason"] = reason
+        case nil:
+            payloadTypes["Reason"] = "No reason provided."
+    }
+    value, err := json.Marshal(payloadTypes)
+    if err != nil {
+        return userObj{}, err
+    }
+    data, err := u.Request("PATCH", fmt.Sprintf("/guilds/%v/users/%v", guild, user), value)
     if err != nil {
         return userObj{}, err
     }
@@ -261,7 +293,7 @@ func (u *userData) Leaderboard(guild string) ([]userObj, error) {
     var leaderboardRaw []userObjRaw
     var leaderboard []userObj
     
-    data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users", guild), "")
+    data, err := u.Request("GET", fmt.Sprintf("/guilds/%v/users", guild), nil)
     if err != nil {
         return []userObj{}, err
     }
