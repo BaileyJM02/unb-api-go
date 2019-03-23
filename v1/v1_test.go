@@ -348,4 +348,22 @@ func TestSetBalanceWithCashInfiniteBankNegitiveInfinite(t *testing.T) {
 	equals(t, userObj{0,"398197113495748626",0,true,false,0,false,true,0,false,false}, data)
 }
 
+func TestUpdateBalanceWithCorrectData(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"user_id":"398197113495748626","cash":50,"bank":502,"total":552,"found":true}`)
+    
+    api := Custom("token", client)
+	data, err := api.UpdateBalance("411898639737421824", "398197113495748626", 0, 0, "Just testing")
+	ok(t, err)
+	equals(t, userObj{0,"398197113495748626",50,false,false,502,false,false,552,false,false}, data)
+}
+
+func TestUpdateBalanceWithNegitiveData(t *testing.T) {
+    client := setClient(200, "/guilds/411898639737421824/users/398197113495748626", `{"user_id":"398197113495748626","cash":50,"bank":502,"total":552,"found":true}`)
+    
+    api := Custom("token", client)
+	data, err := api.UpdateBalance("411898639737421824", "398197113495748626", -40, -980, "Just testing")
+	ok(t, err)
+	equals(t, userObj{0,"398197113495748626",50,false,false,502,false,false,552,false,false}, data)
+}
+
 
