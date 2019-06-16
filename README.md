@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  A Go library for the UnbelievaBoat Discord bot API.
+  A Go library for the UnbelievaBoat Discord bot API.<br/>
   By <a href="https://bailey.guru/">Bailey</a>
 </p>
 
