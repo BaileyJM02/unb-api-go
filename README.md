@@ -56,7 +56,7 @@ If there's anything you'd like to chat about, please feel free to join our [Disc
 ## Install Process
 
 > I'm guessing you already have an environment setup.
-- `go get github.com/BaileyJM02/unb-api-go/v1` to install the wrapper (v1)
+- `$ go get github.com/BaileyJM02/unb-api-go/v1` to install the wrapper (v1)
 - `api := v1.New(token)` to create a new instance, `token` is your token found [here](https://unb.pizza/api/docs)
 - `api.GetBalance(guildID, userID)` functions follow the `api` var we created above.
 
