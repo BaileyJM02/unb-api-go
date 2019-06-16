@@ -7,6 +7,7 @@
 
 <p align="center">
   A Go library for the UnbelievaBoat Discord bot API.
+  By <a href="https://bailey.guru/">Bailey</a>
 </p>
 
 <p align="center">
@@ -27,24 +28,24 @@
 - [Install Process](#Install-process)
 - [Acknowledgments](#acknowledgments)
 
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 ## Introduction
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 [![Discord](https://img.shields.io/badge/Chat_On-Discord-008080.svg?style=flat-square)](https://discordapp.com/invite/YMJ2dGp)
 
-*In writing*
+The UnbelievaBoat API library is an importable package to make using the UnbelievaBoat API easier to use within Go. Although updates may be few and far, all new features are added as they are released as I talk to the developer of the bot and I am made aware of upcoming changes. **PRs, bug reports and feature requests are welcome!**
+
+Version 1 ([`/v1`](https://github.com/BaileyJM02/unb-api-go/tree/master/v1)) uses version 1 of the UnbelievaBoat API and should be imported as `github.com/BaileyJM02/unb-api-go/v1`, more on the install process [here](#install-process). This is allows for the second version of the api to be installed as `github.com/BaileyJM02/unb-api-go/v2` etc. upon release.
 
 ## Features
 
-A few of the things you can do with unb-api-go:
+A few of the things you can do with **unb-api-go**:
 
 * Connect to the UnbelievaBoat API
 * See user balance
 * See guild leaderboard
 * Set custom http.Client
-* More in development...
+* And more...
 
 ## Feedback
 
@@ -61,4 +62,4 @@ If there's anything you'd like to chat about, please feel free to join our [Disc
 
 ## Acknowledgments
 
-Thanks to [Codenvy](https://codenvy.io) for supporting me with an awesome IDE while I don't have a computer. 
+> Nothing here yet.
